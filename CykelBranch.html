@@ -197,6 +197,8 @@
         }
       }
     </style>
+    
+
   </head>
   <body>
     <div class="app">
@@ -268,15 +270,15 @@
     </style>
     
     
-    <clipPath id="clippath">
+
+    
+<clipPath id="clippath">
       
       
       <rect class="cls-1" width="1920" height="1080"/>
       
     
     </clipPath>
-    
-  
   </defs>
   
   
@@ -528,7 +530,6 @@
     
   
   </g>
-  
 
   <circle id="player" cx="980" cy="620" r="12"/>
 </svg>
@@ -558,6 +559,7 @@
     <div class="hint">Tramp i pedalerne med fingrene – cirklen forlader ikke vejen</div>
     <script>
       const player = document.getElementById("player");
+      const playerIcon = document.getElementById("player-icon");
       const road = document.getElementById("road");
       const holes = Array.from(document.querySelectorAll(".hole"));
       const triggers = Array.from(document.querySelectorAll(".trigger")).map(
@@ -850,6 +852,7 @@
         x: player.cx.baseVal.value,
         y: player.cy.baseVal.value,
       };
+      syncPlayerVisuals();
 
       const activeKeys = new Set();
       const arrowKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
@@ -919,6 +922,14 @@
         );
       }
 
+      function syncPlayerVisuals() {
+        player.setAttribute("cx", position.x);
+        player.setAttribute("cy", position.y);
+        if (playerIcon) {
+          playerIcon.setAttribute("transform", `translate(${position.x} ${position.y})`);
+        }
+      }
+
       function attemptMove(dx, dy) {
         const distance = Math.max(Math.abs(dx), Math.abs(dy));
         const steps = Math.max(1, Math.ceil(distance / Math.max(radius * 0.5, 1)));
@@ -926,16 +937,36 @@
         const stepY = dy / steps;
 
         for (let i = 0; i < steps; i += 1) {
-          const target = { x: position.x + stepX, y: position.y + stepY };
-          if (isInsideRoad(target)) {
-            position = target;
-          } else {
+          const diagonalTarget = { x: position.x + stepX, y: position.y + stepY };
+          if (isInsideRoad(diagonalTarget)) {
+            position = diagonalTarget;
+            continue;
+          }
+
+          let moved = false;
+
+          if (stepX !== 0) {
+            const horizontalTarget = { x: position.x + stepX, y: position.y };
+            if (isInsideRoad(horizontalTarget)) {
+              position = horizontalTarget;
+              moved = true;
+            }
+          }
+
+          if (stepY !== 0) {
+            const verticalTarget = { x: position.x, y: position.y + stepY };
+            if (isInsideRoad(verticalTarget)) {
+              position = verticalTarget;
+              moved = true;
+            }
+          }
+
+          if (!moved) {
             break;
           }
         }
 
-        player.setAttribute("cx", position.x);
-        player.setAttribute("cy", position.y);
+        syncPlayerVisuals();
       }
 
       window.addEventListener("keydown", (event) => {
